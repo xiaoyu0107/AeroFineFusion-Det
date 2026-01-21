@@ -1,0 +1,18 @@
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: /data/experiments/CXY/datasets/SeaDronesSee_yolo # dataset root dir
+train: train/images # train images (relative to 'path')  8381 images
+val: val/images # val images (relative to 'path')  2096 images
+test: /data/experiments/CXY/datasets/SeaDronesSee-V2/CompressedVersion/images/test # test images (optional)
+
+nc: 6  # 类别数量
+
+# Classes
+names:
+  0: ignored
+  1: swimmer
+  2: boat
+  3: jetski
+  4: life_saving_appliances
+  5: buoy
+
