@@ -54,7 +54,7 @@ class SEBlock(nn.Module):
         return x * y
 
 
-class LBAF(nn.Module):
+class DAWF(nn.Module):
     def __init__(self, c1, c2=None, num_inputs=None, epsilon=1e-4, reduction=4, se_reduction=16):
         super().__init__()
 

@@ -9,46 +9,10 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
-from ultralytics.nn.add import *
 from ultralytics.nn.autobackend import check_class_names
 from ultralytics.nn.modules import (
-    Detect_AFPN4,
-    Detect_SA,
-    BiFPNBlockP2,
-    C2f_TriAD,
-    DPSPPF,
-    GCSPPF,
-    GLA_SPPF,
-    C2fTriAttn,
-    RGAFPNNeck,
-    GraphFPNNeck,
-    WADown,
-    ADRes2Block,
-    C2f_MultiOGA,
-    MDFM,
-    PSA_BiFPN,
-    BiFPN_Add,
-    C2f_FSA,
-    C2f_ODv2,
-    DGAConv_RKA,
-    PConv,
-    C2f_EfficientViM,
-    HyperComputeModule,
-    GSConv,
-    VoVGSCSP,
-    VoVGSCSPC,
-    MSSPPFLKA,
-    MSSPPFLA,
-    EMCAD_block,
-    CGB,
-    SPPFLK,
-    C2f_OD,
-    BiFPN_Concat,
-    BiFPN_Concatv2,
-    FreqFusion,
-    C2f_DWR,
-    QuadrangleAttention,
-    C2f_AT,
+    Detect_CLAFHead,
+    C2f_CMUNeXtB,
     AIFI,
     C1,
     C2,
@@ -259,7 +223,7 @@ class BaseModel(torch.nn.Module):
                 if isinstance(m, RepVGGDW):
                     m.fuse()
                     m.forward = m.forward_fuse
-                if isinstance(m, v10Detect):
+                if isinstance(m, v10Detect,Detect_CLAFHead):
                     m.fuse()  # remove one2many head
             self.info(verbose=verbose)
 
@@ -302,7 +266,7 @@ class BaseModel(torch.nn.Module):
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(
-            m, (Detect,Detect_AFPN4)
+            m, (Detect,Detect_CLAFHead)
         ):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect, YOLOEDetect, YOLOESegment
             m.stride = fn(m.stride)
             m.anchors = fn(m.anchors)
@@ -377,7 +341,7 @@ class DetectionModel(BaseModel):
 
         # Build strides
         m = self.model[-1]  # Detect()
-        if isinstance(m, (Detect,Detect_AFPN4,Detect_SA)):  # includes all Detect subclasses like Segment, Pose, OBB, YOLOEDetect, YOLOESegment
+        if isinstance(m, (Detect,Detect_CLAFHead)):  # includes all Detect subclasses like Segment, Pose, OBB, YOLOEDetect, YOLOESegment
             s = 256  # 2x min stride
             m.inplace = self.inplace
 
@@ -385,7 +349,7 @@ class DetectionModel(BaseModel):
                 """Perform a forward pass through the model, handling different Detect subclass types accordingly."""
                 if self.end2end:
                     return self.forward(x)["one2many"]
-                return self.forward(x)[0] if isinstance(m, (Segment, YOLOESegment, Pose, OBB,Detect_SA)) else self.forward(x)
+                return self.forward(x)[0] if isinstance(m, (Segment, YOLOESegment, Pose, OBB,Detect_CLAFHead)) else self.forward(x)
 
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
@@ -1402,22 +1366,15 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
     layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
     base_modules = frozenset(
         {
+            C2f_CMUNeXtB,
             Classify,
             Conv,
-            PConv,
-            WADown,
-            ADRes2Block,
-            CGB,
-            # CoordConv,
             ConvTranspose,
             GhostConv,
             Bottleneck,
             GhostBottleneck,
             SPP,
             SPPF,
-            C2f_TriAD,
-            MSSPPFLA,
-            MSSPPFLKA,
             C2fPSA,
             C2PSA,
             DWConv,
@@ -1426,22 +1383,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C1,
             C2,
             C2f,
-            C2fTriAttn,
-            C2f_DWR,
-            C2f_EfficientViM,
-            C2f_OD,
-            C2f_ODv2,
-            C2f_FSA,
-            C2f_MultiOGA,
-            SPPFLK,
-            GCSPPF,
             C3k2,
             RepNCSPELAN4,
             ELAN1,
             ADown,
             AConv,
             SPPELAN,
-            GLA_SPPF,
             DPSPPF,
             C2fAttn,
             C3,
@@ -1455,22 +1402,15 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             SCDown,
             C2fCIB,
             A2C2f,
-            VoVGSCSP,
-            VoVGSCSPC,
-            GSConv,
-            HyperComputeModule,
-            DGAConv_RKA,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
         {
+            C2f_CMUNeXtB,
             BottleneckCSP,
             C1,
             C2,
             C2f,
-            C2f_OD,
-            C2f_AT,
-            C2f_TriAD,
             C3k2,
             C2fAttn,
             C3,
@@ -1482,8 +1422,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fCIB,
             C2PSA,
             A2C2f,
-            ADRes2Block,
-            C2fTriAttn,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
@@ -1522,52 +1460,6 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             if m is C2fCIB:
                 legacy = False
 
-        # f 是输入层索引列表，例如 [4, 6, 9]
-        # ch[x] 是每个输入层的通道数
-    #     elif m is GraphFPNNeck:
-    # # f 为输入索引，例如 [4,6,9]
-    #         in_ch = [ch[x] for x in f]    # 自动推导输入通道
-    #         out_ch = args[0]              # 第一个参数是 out_channels
-    #         hidden_ch = args[1]           # 第二个参数是 hidden_dim
-
-    #         args = [in_ch, out_ch, hidden_ch]
-    #         c2 = out_ch                   # 写回输出通道
-        elif m is GraphFPNNeck:
-            c1 = [ch[x] for x in f]
-            out_ch = args[0]
-            hidden_ch = args[1]
-            num_layers = args[2]
-            args = [c1, out_ch, hidden_ch, num_layers]
-            c2 = out_ch
-
-        elif m is RGAFPNNeck:
-            c1 = [ch[x] for x in f]
-            out_ch = args[0]
-            hidden_ch = args[1]
-            num_layers = args[2]
-            args = [c1, out_ch, hidden_ch]
-            c2 = out_ch
-            
-
-        elif m is FreqFusion:
-            c1 = args[0] if len(args) > 0 else ch[f]  # hr_channels
-            c2 = args[1] if len(args) > 1 else ch[f - 1]  # lr_channels
-            m_ = FreqFusion(c1, c2, *args[2:])
-        elif m is EMCAD_block:
-            args = [ch[f]]
-        elif m is ADRes2Block:
-            c1 = ch[f]
-            args = [c1, *args]
-
-        elif m is BiFPN_Concat:
-            c2 = sum(ch[x] for x in f)
-        elif m is BiFPN_Concatv2: 
-            c2 = sum(ch[x] for x in f)
-        elif m is PSA_BiFPN:
-        # 获取多个输入层的通道数列表
-            c1 = [ch[x] for x in f]
-            out_channels = args[0] if len(args) > 0 else c1[-1]
-            args = [c1, out_channels]
 
         elif m is BiFPN_Add:
         # 获取多个输入层的通道数列表
@@ -1575,45 +1467,15 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             out_channels = args[0] if len(args) > 0 else c1[-1]
             args = [c1,*args]
             # print(args)
-        elif m is MDFM:
-            c1 = sum(ch[x] for x in f)
+        elif m is DAWF:
+        # 获取多个输入层的通道数列表
+            c1 = [ch[x] for x in f]
+            out_channels = args[0] if len(args) > 0 else c1[-1]
             args = [c1,*args]
-        # elif m is {BiFPN_Add2,BiFPN_Add3}:
-        #     print(ch)
-        #     c1 = sum(ch[x] for x in f)  # 获取所有输入分支的通道数
-
-        #     c2 = args[1]  # 你在yaml中写的目标输出通道数
-        #     args = [c1, c2]
-
-
-        elif m is QuadrangleAttention:
-            c1 = ch[f]
-            args = [c1, *args[1:]]
-
-        elif m is C2f_AT:
-            args = [ch[f],*args]
-
+            # print(args)
         elif m is AIFI:
             args = [ch[f], *args]
 
-        elif m is EMA:
-            args = [ch[f]]
-
-        elif m is CBAM:
-            c1= ch[f]
-            args = [c1, *args[1:]]
-
-        elif m is MHSA: #自注意力
-            args = [ch[f],*args]
-
-        elif m is SimAM:
-            args = []
-
-        elif m is CoordConv:
-            print(ch[f])
-            c2 = args[0]
-            c1 = ch[f]
-            args = [c1,c2,*args[1:]]
 
         elif m in frozenset({HGStem, HGBlock}):
             c1, cm, c2 = ch[f], args[0], args[1]
@@ -1628,12 +1490,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset(
-            {Detect,Detect_AFPN4, WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect,Detect_SA}
+            {Detect, Detect_CLAFHead,WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect}
         ):
             args.append([ch[x] for x in f])
             if m is Segment or m is YOLOESegment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
-            if m in {Detect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB,Detect_AFPN4}:
+            if m in {Detect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB,Detect_CLAFHead}:
                 m.legacy = legacy
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
@@ -1723,7 +1585,7 @@ def guess_model_task(model):
             return "classify"
         if "detect" in m:
             return "detect"
-        if m == "detect_sa":
+        if m == "detect_claf":
             return "detect"
         if "segment" in m:
             return "segment"
@@ -1755,7 +1617,7 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
-            elif isinstance(m, (Detect, WorldDetect, Detect_AFPN4 , YOLOEDetect, v10Detect,Detect_SA)):
+            elif isinstance(m, (Detect, WorldDetect, Detect_CLAFHead , YOLOEDetect, v10Detect,)):
                 return "detect"
 
     # Guess from model filename

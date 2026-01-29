@@ -104,76 +104,16 @@ from .transformer import (
     TransformerEncoderLayer,
     TransformerLayer,
 )
-from .AFPN import Detect_AFPN4
-from .CAFM import C2f_AT
-from .QA import QuadrangleAttention
-from .bifpn import BiFPN_Add,BiFPNBlockP2
-from .DWR import C2f_DWR
-from .FreqFusion import FreqFusion
-from .bifpn_cat import BiFPN_Concat,BiFPN_Concatv2
-from .odconv import C2f_OD
-from .LSKA import SPPFLK
-from .CGB import CGB
-from .MSCAM import EMCAD_block
-from .MSSPPFLA import  MSSPPFLA
-from .MSSPPFLKA import MSSPPFLKA
-from .Hyper import HyperComputeModule
-from .EfficientViM import C2f_EfficientViM
-from .PConv import PConv
-from .DGAConv import DGAConv_RKA
-from .odconv2 import C2f_ODv2
-from .PSA_BiFPN import PSA_BiFPN
-from .FSA_RGBlock import C2fTriAttn
-from .mdfm import MDFM
-from .Moganet import C2f_MultiOGA
-from .ADRes2Block import ADRes2Block
-from .Down_WT import WADown
-from .GraphFPN import GraphFPNNeck
-from .rga_fpn import RGAFPNNeck
-from .GLA_SPPF import GLA_SPPF,DPSPPF
-from .GCSPPF import GCSPPF
-from .C2f_TriAD import C2f_TriAD
-from .FSA_ODConv import C2f_FSA
-from .Detect_SA import Detect_SA
+from .bifpn import BiFPN_Add
+from .CLAFHead import Detect_CLAFHead
+from .CMUNeXt import C2f_CMUNeXtB
+from .DAWF import DAWF
+
 __all__ = (
-    "Detect_SA",
-    "BiFPNBlockP2",
-    "C2f_FSA",
-    "C2f_TriAD",
-    "DPSPPF",
-    "GCSPPF",
-    "GLA_SPPF",
-    "C2fTriAttn",
-    "RGAFPNNeck",
-    "GraphFPNNeck",
-    "WADown",
-    "ADRes2Block",
-    "C2f_MultiOGA",
-    "MDFM",
-    "FSARGBlock",
+    "Detect_CLAFHead",
+    "C2f_CMUNeXtB",
+    "DAWF",
     "BiFPN_Add",
-    "PSA_BiFPN",
-    "C2f_FSA",
-    "C2f_ODv2",
-    "DGAConv_RKA",
-    "PConv",
-    "C2f_EfficientViM",
-    "HyperComputeModule",
-    "GSConv",
-    "VoVGSCSP",
-    "VoVGSCSPC",
-    "MSSPPFLKA",
-    "MSSPPFLA",
-    "EMCAD_block",
-    "CGB",
-    "SPPFLK",
-    "C2f_OD",
-    "BiFPN_Concat",
-    "BiFPN_Concatv2",
-    "FreqFusion",
-    "C2f_DWR",
-    "QuadrangleAttention",
-    "C2f_AT",
     "Conv",
     "Conv2",
     "LightConv",

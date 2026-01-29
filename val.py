@@ -2,14 +2,14 @@ from ultralytics import YOLO
 import os
 
 # 模型路径
-model_path1 = '/data/experiments/CXY/ultralytics-main/runs/visdrone/train_yolov8s+p2-p5+QA3/weights/best.pt'  # 替换为你的模型路径
-model_path2 = 'runs/visdrone/train_yolov8s-p2_BiFPN/weights/best.pt'
+
+model_path = ''
 # # 自定义保存路径
 # save_dir = 'runs/visdrone/val_yolov8s_250e'  # 可更改为你希望的目录
 # os.makedirs(save_dir, exist_ok=True)
 
 # 加载模型
-model = YOLO(model_path2)
+model = YOLO(model_path)
 
 visdrone='/data/experiments/CXY/ultralytics-main/ultralytics/cfg/datasets/VisDrone.yaml'
 seadronesee='/data/experiments/CXY/ultralytics-main/ultralytics/cfg/datasets/seadronesee.yaml'
@@ -27,8 +27,8 @@ metrics = model.val(
     save=True,              # 保存预测图片
     save_txt=False,         # 是否保存标签txt
     save_conf=False,        # 是否保存置信度
-    project='runs/visdrone2',     # 基础保存目录
-    name='val_yolov8s-p2_BiFPN', # 子目录名
+    project='runs/visdrone',     # 基础保存目录
+    name='', # 子目录名
     device=1,
 )
 print(metrics.box.map, metrics.box.map50, metrics.box.map75)
